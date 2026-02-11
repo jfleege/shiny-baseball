@@ -1,48 +1,57 @@
-
-```{r}
-library(shiny)
-library(bslib)
-library(Lahman)
-
-ui <- page_sidebar(
-  # title of the page
-  title = "title panel",
-  
-  # sidebar code here
-  sidebar = sidebar("sidebar", position = "right",
-    selectInput("Batting", "Batting", choices = names(Batting)),
-  ),
-  card(
-    card_header(),
-    
-  )
-)
-
-server <- function(input, output) {
-  output$Batting <- renderPrint({
-    input$Batting
-  })
-}
-
-shinyApp(ui = ui, server=server)
-```
+### libraries
 
 ```{r}
 # library code will go here (will eventually be moved to and R-script)
+
 # libraries we'll be using
 library(shiny)
 library(bslib)
 library(Lahman) # specific data set for the app (baseball data)
 ```
 
+### ui
+
 ```{r}
 # UI code is gonna go here for now (will eventually be moved to an R-script)
+
+# ui/display code for the app
+ui <- page_sidebar(
+  
+  # title of the page
+  title = "Baseball Data and Analytics — Courtesy of the Lahman Package",
+  
+  # sidebar code here
+  sidebar = sidebar("sidebar", position = "right"),
+  
+  # card / main body here
+  card(
+    card_header(uiOutput("card_title")),
+    card_body("temp")
+  )
+)
 ```
+
+### server
 
 ```{r}
 # server code is gonna go here for now (will eventually be moved to an R-script)
+
+# server/back end code for the app
+server <- function(input, output) {
+  
+  # render the title of the card based on the sidebar input
+  output$card_title <- renderUI({
+    req(input$sidebar_choice)
+  paste(input$sidebar_choice)
+  })
+}
 ```
+
+### run app
 
 ```{r}
 # code to run the app (will eventually be moved to an R-script)
+
+# runs the app
+shinyApp(ui = ui, server=server)
 ```
