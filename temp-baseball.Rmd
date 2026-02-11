@@ -7,6 +7,8 @@
 library(shiny)
 library(bslib)
 library(Lahman) # specific data set for the app (baseball data)
+
+data("LahmanData", package = "Lahman")
 ```
 
 ### ui
@@ -14,19 +16,25 @@ library(Lahman) # specific data set for the app (baseball data)
 ```{r}
 # UI code is gonna go here for now (will eventually be moved to an R-script)
 
-# ui/display code for the app
+# ui/display code here
 ui <- page_sidebar(
   
-  # title of the page
+  # code for the title of the page
   title = "Baseball Data and Analytics — Courtesy of the Lahman Package",
   
-  # sidebar code here
-  sidebar = sidebar("sidebar", position = "right"),
+  # sidebar code
+  sidebar = sidebar(
+    selectInput(
+      "sidebar_choice",
+      "Choose a data set to view:",
+      choices = LahmanData$file 
+    )
+  ),
   
-  # card / main body here
+  # main page / card code here
   card(
     card_header(uiOutput("card_title")),
-    card_body("temp")
+    card_body(uiOutput("card_body"))
   )
 )
 ```
@@ -39,10 +47,23 @@ ui <- page_sidebar(
 # server/back end code for the app
 server <- function(input, output) {
   
-  # render the title of the card based on the sidebar input
+  # render side bar
   output$card_title <- renderUI({
     req(input$sidebar_choice)
-  paste(input$sidebar_choice)
+    paste(input$sidebar_choice)
+  })
+  
+  # render main page / card body
+  output$card_body <- renderUI({
+    req(input$sidebar_choice)
+
+    df <- get(input$sidebar_choice, envir = asNamespace("Lahman"))
+
+    tagList(
+      tags$pre(capture.output(utils::str(df))),
+      tags$hr(),
+      tags$pre(capture.output(utils::head(df, 10)))
+    )
   })
 }
 ```
