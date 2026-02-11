@@ -27,4 +27,22 @@ server <- function(input, output) {
 shinyApp(ui = ui, server=server)
 ```
 
+```{r}
+# library code will go here (will eventually be moved to and R-script)
+# libraries we'll be using
+library(shiny)
+library(bslib)
+library(Lahman) # specific data set for the app (baseball data)
+```
 
+```{r}
+# UI code is gonna go here for now (will eventually be moved to an R-script)
+```
+
+```{r}
+# server code is gonna go here for now (will eventually be moved to an R-script)
+```
+
+```{r}
+# code to run the app (will eventually be moved to an R-script)
+```
