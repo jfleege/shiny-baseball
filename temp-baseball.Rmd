@@ -1,0 +1,30 @@
+
+```{r}
+library(shiny)
+library(bslib)
+library(Lahman)
+
+ui <- page_sidebar(
+  # title of the page
+  title = "title panel",
+  
+  # sidebar code here
+  sidebar = sidebar("sidebar", position = "right",
+    selectInput("Batting", "Batting", choices = names(Batting)),
+  ),
+  card(
+    card_header(),
+    
+  )
+)
+
+server <- function(input, output) {
+  output$Batting <- renderPrint({
+    input$Batting
+  })
+}
+
+shinyApp(ui = ui, server=server)
+```
+
+
