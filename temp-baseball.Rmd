@@ -23,11 +23,16 @@ ui <- page_sidebar(
   title = "Baseball Data and Analytics — Courtesy of the Lahman Package",
   
   # sidebar code
-  sidebar = sidebar(
+  sidebar = sidebar(position = "right",
     selectInput(
       "sidebar_choice",
-      "Choose a data set to view:",
-      choices = LahmanData$file 
+      "Select a Year to View:",
+      choices = sort(Lahman::Teams$yearID, decreasing = TRUE)
+    ),
+    selectInput(
+      "sidebar_choice",
+      "Choose a Team to View:",
+      choices = Lahman::Teams$teamID
     )
   ),
   
