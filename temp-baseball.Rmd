@@ -28,10 +28,11 @@ ui <- page_sidebar(
     
     # year selection first  
     selectInput(
-      "sidebar_choice",
+      "year_choice",
       "Select a Year to View:",
-      choices = sort(Lahman::Teams$yearID, decreasing = TRUE)
+      choices = sort(unique(Lahman::Teams$yearID), decreasing = TRUE)
     ),
+
     
     # team selection second (choices get updated from server)
     selectizeInput(
@@ -53,7 +54,13 @@ ui <- page_sidebar(
   # main page / card code here
   card(
     card_header(uiOutput("card_title")),
-    card_body(uiOutput("card_body"))
+    card_body(
+      tableOutput("team_stats_tbl"),
+      fluidRow(
+        column(6, plotOutput("stat_plot_year", height = "320px")),
+        column(6, plotOutput("stat_plot_prev", height = "320px"))
+      )
+    )
   )
 )
 ```
@@ -66,17 +73,66 @@ ui <- page_sidebar(
 # server/back end code for the app
 server <- function(input, output, session) {
 
-  # filter Teams by selected year
-  teams_year <- reactive({
+  # ---------- helpers ----------
+  year_int <- reactive({
     req(input$year_choice)
-    subset(Lahman::Teams, yearID == input$year_choice)
+    yr <- suppressWarnings(as.integer(input$year_choice))
+    req(!is.na(yr))
+    yr
   })
 
-  # when year changes -> update team choices
-  observeEvent(input$year_choice, {
+  teams_year <- reactive({
+    subset(Lahman::Teams, yearID == year_int())
+  })
+
+  team_row <- reactive({
+    req(input$team_choice)
+    df <- teams_year()
+    row <- df[df$teamID == input$team_choice, , drop = FALSE]
+    req(nrow(row) >= 1)
+    row[1, , drop = FALSE]
+  })
+
+  ranked_dot_plot <- function(df, stat, year, selected_team) {
+    validate(
+      need(stat %in% names(df), "Selected stat isn't available for this year."),
+      need(is.numeric(df[[stat]]), "Selected stat isn't numeric, can't plot.")
+    )
+
+    d <- df[, c("teamID", "name", stat)]
+    names(d)[3] <- "value"
+
+    d <- d[is.finite(d$value), , drop = FALSE]
+    validate(need(nrow(d) > 1, "Not enough data to plot."))
+
+    d <- d[order(d$value, decreasing = TRUE), , drop = FALSE]
+    d$rank <- seq_len(nrow(d))
+
+    plot(
+      x = d$value, y = d$rank,
+      xlab = stat, ylab = "League Rank (1 = most)",
+      main = paste0(year, " — ", stat),
+      yaxt = "n"
+    )
+    axis(2, at = pretty(d$rank))
+    abline(h = pretty(d$rank), lty = 3)
+
+    idx <- which(d$teamID == selected_team)
+    if (length(idx) == 1) {
+      points(d$value[idx], d$rank[idx], pch = 19, cex = 1.4)
+      text(d$value[idx], d$rank[idx], labels = d$teamID[idx], pos = 4)
+    } else {
+      mtext("Selected team not found this year", side = 3, line = 0.2, cex = 0.85)
+    }
+  }
+
+  # ---------- sidebar inputs ----------
+  observeEvent(year_int(), {
     df <- teams_year()
 
-    # readable labels, stable values
+    # avoid duplicate teamIDs if present
+    df <- df[!duplicated(df$teamID), , drop = FALSE]
+
     team_labels <- paste0(df$name, " (", df$teamID, ")")
     team_values <- df$teamID
     names(team_values) <- team_labels
@@ -89,7 +145,6 @@ server <- function(input, output, session) {
       server = TRUE
     )
 
-    # clear stats until a team is chosen
     updateSelectizeInput(
       session,
       "stat_choice",
@@ -99,28 +154,18 @@ server <- function(input, output, session) {
     )
   })
 
-  # stats available for selected year+team (numeric columns from Teams row)
   available_stats <- reactive({
-    req(input$year_choice, input$team_choice)
-
-    df <- teams_year()
-    row <- df[df$teamID == input$team_choice, , drop = FALSE]
-    req(nrow(row) >= 1)
-
-    # if duplicates exist, take the first row (edge case)
-    row <- row[1, , drop = FALSE]
+    req(input$team_choice)
+    row <- team_row()
 
     num_cols <- names(row)[vapply(row, is.numeric, logical(1))]
-
-    # remove IDs / fields that are usually not "stats"
     setdiff(num_cols, c("yearID"))
   })
 
-  # when team changes update stat choices
   observeEvent(input$team_choice, {
     stats <- available_stats()
+    req(length(stats) > 0)
 
-    # pick a sensible default if present
     default_stat <- if ("W" %in% stats) "W" else stats[1]
 
     updateSelectizeInput(
@@ -132,40 +177,49 @@ server <- function(input, output, session) {
     )
   })
 
-  # reactive card title
+  # ---------- card header ----------
   output$card_title <- renderUI({
-    req(input$year_choice, input$team_choice)
-
+    req(input$team_choice)
     stat_txt <- if (!is.null(input$stat_choice) && nzchar(input$stat_choice)) {
       paste0(" | Stat: ", input$stat_choice)
     } else {
       ""
     }
-
-    paste0("Year: ", input$year_choice, " | Team: ", input$team_choice, stat_txt)
+    paste0("Year: ", year_int(), " | Team: ", input$team_choice, stat_txt)
   })
 
-  # reactive card body (show chosen stat + a small preview row)
-  output$card_body <- renderUI({
-    req(input$year_choice, input$team_choice, input$stat_choice)
+  # ---------- core team stats ----------
+  output$team_stats_tbl <- renderTable({
+    row <- team_row()
 
-    df <- teams_year()
-    row <- df[df$teamID == input$team_choice, , drop = FALSE]
-    req(nrow(row) >= 1)
-    row <- row[1, , drop = FALSE]
+    wanted <- c("W", "L", "R", "RA", "HR", "SB", "ERA")
+    cols <- intersect(wanted, names(row))
+    req(length(cols) > 0)
 
-    val <- row[[input$stat_choice]][[1]]
-
-    tagList(
-      tags$p(paste0(input$stat_choice, ": ", val)),
-      tags$hr(),
-      tags$pre(capture.output(utils::str(row))),
-      tags$hr(),
-      tags$pre(capture.output(row))
+    data.frame(
+      Stat  = cols,
+      Value = vapply(cols, function(x) row[[x]][[1]], numeric(1)),
+      row.names = NULL
     )
+  }, striped = TRUE, bordered = TRUE, spacing = "s")
+
+  # ---------- ranked dot plots ----------
+  output$stat_plot_year <- renderPlot({
+    req(input$team_choice, input$stat_choice)
+    df <- teams_year()
+    ranked_dot_plot(df, input$stat_choice, year_int(), input$team_choice)
+  })
+
+  output$stat_plot_prev <- renderPlot({
+    req(input$team_choice, input$stat_choice)
+    prev_year <- year_int() - 1
+
+    df_prev <- subset(Lahman::Teams, yearID == prev_year)
+    validate(need(nrow(df_prev) > 0, "No data available for prior year."))
+
+    ranked_dot_plot(df_prev, input$stat_choice, prev_year, input$team_choice)
   })
 }
-
 ```
 
 ### run app
