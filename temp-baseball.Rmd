@@ -23,16 +23,30 @@ ui <- page_sidebar(
   title = "Baseball Data and Analytics — Courtesy of the Lahman Package",
   
   # sidebar code
-  sidebar = sidebar(position = "right",
+  sidebar = sidebar(
+    position = "right",
+    
+    # year selection first  
     selectInput(
       "sidebar_choice",
       "Select a Year to View:",
       choices = sort(Lahman::Teams$yearID, decreasing = TRUE)
     ),
-    selectInput(
-      "sidebar_choice",
+    
+    # team selection second (choices get updated from server)
+    selectizeInput(
+      "team_choice",
       "Choose a Team to View:",
-      choices = Lahman::Teams$teamID
+      choices = NULL,
+      options = list(placeholder = "Select a year first")
+    ),
+
+    # stat/metric (choices get updated from server)
+    selectizeInput(
+      "stat_choice",
+      "Select Stat to View:",
+      choices = NULL,
+      options = list(placeholder = "Select a team first")
     )
   ),
   
@@ -50,27 +64,108 @@ ui <- page_sidebar(
 # server code is gonna go here for now (will eventually be moved to an R-script)
 
 # server/back end code for the app
-server <- function(input, output) {
-  
-  # render side bar
-  output$card_title <- renderUI({
-    req(input$sidebar_choice)
-    paste(input$sidebar_choice)
-  })
-  
-  # render main page / card body
-  output$card_body <- renderUI({
-    req(input$sidebar_choice)
+server <- function(input, output, session) {
 
-    df <- get(input$sidebar_choice, envir = asNamespace("Lahman"))
+  # filter Teams by selected year
+  teams_year <- reactive({
+    req(input$year_choice)
+    subset(Lahman::Teams, yearID == input$year_choice)
+  })
+
+  # when year changes -> update team choices
+  observeEvent(input$year_choice, {
+    df <- teams_year()
+
+    # readable labels, stable values
+    team_labels <- paste0(df$name, " (", df$teamID, ")")
+    team_values <- df$teamID
+    names(team_values) <- team_labels
+
+    updateSelectizeInput(
+      session,
+      "team_choice",
+      choices = team_values,
+      selected = character(0),
+      server = TRUE
+    )
+
+    # clear stats until a team is chosen
+    updateSelectizeInput(
+      session,
+      "stat_choice",
+      choices = character(0),
+      selected = character(0),
+      server = TRUE
+    )
+  })
+
+  # stats available for selected year+team (numeric columns from Teams row)
+  available_stats <- reactive({
+    req(input$year_choice, input$team_choice)
+
+    df <- teams_year()
+    row <- df[df$teamID == input$team_choice, , drop = FALSE]
+    req(nrow(row) >= 1)
+
+    # if duplicates exist, take the first row (edge case)
+    row <- row[1, , drop = FALSE]
+
+    num_cols <- names(row)[vapply(row, is.numeric, logical(1))]
+
+    # remove IDs / fields that are usually not "stats"
+    setdiff(num_cols, c("yearID"))
+  })
+
+  # when team changes update stat choices
+  observeEvent(input$team_choice, {
+    stats <- available_stats()
+
+    # pick a sensible default if present
+    default_stat <- if ("W" %in% stats) "W" else stats[1]
+
+    updateSelectizeInput(
+      session,
+      "stat_choice",
+      choices = stats,
+      selected = default_stat,
+      server = TRUE
+    )
+  })
+
+  # reactive card title
+  output$card_title <- renderUI({
+    req(input$year_choice, input$team_choice)
+
+    stat_txt <- if (!is.null(input$stat_choice) && nzchar(input$stat_choice)) {
+      paste0(" | Stat: ", input$stat_choice)
+    } else {
+      ""
+    }
+
+    paste0("Year: ", input$year_choice, " | Team: ", input$team_choice, stat_txt)
+  })
+
+  # reactive card body (show chosen stat + a small preview row)
+  output$card_body <- renderUI({
+    req(input$year_choice, input$team_choice, input$stat_choice)
+
+    df <- teams_year()
+    row <- df[df$teamID == input$team_choice, , drop = FALSE]
+    req(nrow(row) >= 1)
+    row <- row[1, , drop = FALSE]
+
+    val <- row[[input$stat_choice]][[1]]
 
     tagList(
-      tags$pre(capture.output(utils::str(df))),
+      tags$p(paste0(input$stat_choice, ": ", val)),
       tags$hr(),
-      tags$pre(capture.output(utils::head(df, 10)))
+      tags$pre(capture.output(utils::str(row))),
+      tags$hr(),
+      tags$pre(capture.output(row))
     )
   })
 }
+
 ```
 
 ### run app
