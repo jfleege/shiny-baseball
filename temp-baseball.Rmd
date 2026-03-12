@@ -7,6 +7,7 @@
 library(shiny)
 library(tidyverse)
 library(bslib)
+library(plotly)
 library(Lahman) # specific data set for the app (baseball data)
 
 data("LahmanData", package = "Lahman")
@@ -84,7 +85,7 @@ ui <- page_sidebar(
     # stat/metric (choices get updated from server)
     selectizeInput(
       "stat_choice",
-      tags$h5(style = "font-weight:700;", "Select Stat to View:"),
+      tags$h5(style = "font-weight:700;", "Select a Stat to View:"),
       choices = NULL,
       options = list(placeholder = "Select a team first")
     )
@@ -101,9 +102,11 @@ ui <- page_sidebar(
       uiOutput("plot_section_title"),
       
       fluidRow(
-        column(6, plotOutput("stat_plot_year", height = "320px")),
-        column(6, plotOutput("stat_plot_prev", height = "320px"))
-      )
+        column(6, plotlyOutput("stat_plot_year", height = "320px")),
+        column(6, plotlyOutput("stat_plot_prev", height = "320px"))
+      ),
+      
+      uiOutput("plot_distrib")
     )
   ),
   
@@ -180,7 +183,14 @@ server <- function(input, output, session) {
 
   pretty_label <- pretty_stat(stat)
 
-  ggplot(d, aes(x = value, y = rank)) +
+  d$hover_text <- paste0(
+    "Team: ", d$name, " (", d$teamID, ")",
+    "<br>Year: ", year,
+    "<br>", pretty_label, ": ", d$value,
+    "<br>Rank: ", d$rank
+  )
+  
+  ggplot(d, aes(x = value, y = rank, text = hover_text)) +
     geom_point(color = "white", size = 2, alpha = 0.8) +
     geom_point(
       data = subset(d, teamID == selected_team),
@@ -316,20 +326,25 @@ server <- function(input, output, session) {
   }, striped = TRUE, bordered = TRUE, spacing = "s")
 
   # ---------- ranked dot plots ----------
-  output$stat_plot_year <- renderPlot({
+  output$stat_plot_year <- renderPlotly({
     req(input$team_choice, input$stat_choice)
     df <- teams_year()
-    ranked_dot_plot(df, input$stat_choice, year_int(), input$team_choice)
+
+    ggplotly(
+      ranked_dot_plot(df, input$stat_choice, year_int(), input$team_choice),
+      tooltip = "text") %>% config(displayModeBar = FALSE)
   })
 
-  output$stat_plot_prev <- renderPlot({
+  output$stat_plot_prev <- renderPlotly({
     req(input$team_choice, input$stat_choice)
     prev_year <- year_int() - 1
 
     df_prev <- subset(Lahman::Teams, yearID == prev_year)
     validate(need(nrow(df_prev) > 0, "No data available for prior year."))
 
-    ranked_dot_plot(df_prev, input$stat_choice, prev_year, input$team_choice)
+    ggplotly(
+      ranked_dot_plot(df_prev, input$stat_choice, prev_year, input$team_choice),
+      tooltip = "text") %>% config(displayModeBar = FALSE)
   })
 }
 ```
