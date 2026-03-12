@@ -18,7 +18,33 @@ stat_category_labels <- c(
   RA = "Runs Allowed (RA)",
   HR = "Home Runs (HR)",
   SB = "Stolen Bases (SB)",
-  ERA = "Earned Run Average (ERA)"
+  ERA = "Earned Run Average (ERA)",
+  Ghome = "Home Games (Ghome)",
+  G = "Games Played (G)",
+  AB = "At Bats (AB)",
+  H = "Hits (H)",
+  X2B = "Doubles (2B)",
+  X3B = "Triples (3B)",
+  BB = "Walks (BB)",
+  SO = "Strikeouts (SO)",
+  ER = "Earned Runs (ER)",
+  HBP = "Hit By Pitch (HBP)",
+  SF = "Sacrifice Flies (SF)",
+  SV = "Saves (SV)",
+  HA = "Hits Allowed (HA)",
+  HRA = "Home Runs Allowed (HRA)",
+  CG = "Complete Games (CG)",
+  E = "Errors (E)",
+  PPF = "Pitcher's Performance Factor (PPF)",
+  BPF = "Bat Performance Factor (BPF)",
+  CS = "Caught Stealing (CS)",
+  SHO = "Shutouts (SHO)",
+  IPouts = "Outs by Pitcher (IPouts)",
+  BBA = "Walks Allowed (BBA)",
+  SOA = "Strikeouts Allowed (SOA)",
+  DP = "Double Plays (DP)",
+  FP = "Fielding Percentage (FP)",
+  attendance = "Attendance"
 )
 ```
 
@@ -49,7 +75,7 @@ ui <- page_sidebar(
     # team selection second (choices get updated from server)
     selectizeInput(
       "team_choice",
-      tags$h5("Choose a Team to View:"),
+      tags$h5(style = "font-weight:700;", "Choose a Team to View:"),
       choices = NULL,
       options = list(placeholder = "Select a year first")
     ),
@@ -57,7 +83,7 @@ ui <- page_sidebar(
     # stat/metric (choices get updated from server)
     selectizeInput(
       "stat_choice",
-      tags$h5("Select Stat to View:"),
+      tags$h5(style = "font-weight:700;", "Select Stat to View:"),
       choices = NULL,
       options = list(placeholder = "Select a team first")
     )
