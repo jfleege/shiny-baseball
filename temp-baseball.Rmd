@@ -24,7 +24,7 @@ ui <- page_sidebar(
   
   # sidebar code
   sidebar = sidebar(
-    position = "right",
+    position = "left",
     
     # year selection first  
     selectInput(
@@ -33,7 +33,6 @@ ui <- page_sidebar(
       choices = sort(unique(Lahman::Teams$yearID), decreasing = TRUE)
     ),
 
-    
     # team selection second (choices get updated from server)
     selectizeInput(
       "team_choice",
@@ -61,6 +60,10 @@ ui <- page_sidebar(
         column(6, plotOutput("stat_plot_prev", height = "320px"))
       )
     )
+  ),
+  
+  theme = bs_theme(
+    bootswatch = "superhero"
   )
 )
 ```
