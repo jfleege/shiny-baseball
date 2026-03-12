@@ -5,6 +5,7 @@
 
 # libraries we'll be using
 library(shiny)
+library(tidyverse)
 library(bslib)
 library(Lahman) # specific data set for the app (baseball data)
 
@@ -116,8 +117,26 @@ ui <- page_sidebar(
 server <- function(input, output, session) {
 
   # ---------- helpers ----------
+  superhero_plot_theme <- function() {
+  theme_minimal() +
+    theme(
+      plot.background = element_rect(fill = "#2b3e50", color = NA),
+      panel.background = element_rect(fill = "#2b3e50", color = NA),
+      panel.grid.major = element_line(color = "#4e5d6c", linewidth = 0.4),
+      panel.grid.minor = element_line(color = "#3e4c59", linewidth = 0.2),
+      text = element_text(color = "white"),
+      axis.text = element_text(color = "white"),
+      axis.title = element_text(color = "white", face = "bold"),
+      plot.title = element_text(color = "white", face = "bold", hjust = 0.5),
+      legend.background = element_rect(fill = "#2b3e50", color = NA),
+      legend.key = element_rect(fill = "#2b3e50", color = NA),
+      legend.text = element_text(color = "white"),
+      legend.title = element_text(color = "white", face = "bold")
+    )
+  }
+  
   pretty_stat <- function(stat) {
-    ifelse(stat %in% names(stat_category_labels), stat_category_labels[stat], stat)
+    ifelse(stat %in% names(stat_category_labels), yes = stat_category_labels[stat], stat)
   }
   
   year_int <- reactive({
@@ -140,41 +159,52 @@ server <- function(input, output, session) {
   })
 
   ranked_dot_plot <- function(df, stat, year, selected_team) {
-    validate(
-      need(stat %in% names(df), "Selected stat isn't available for this year."),
-      need(is.numeric(df[[stat]]), "Selected stat isn't numeric, can't plot.")
-    )
+  validate(
+    need(stat %in% names(df), "Selected stat isn't available for this year."),
+    need(is.numeric(df[[stat]]), "Selected stat isn't numeric, can't plot.")
+  )
 
-    d <- df[, c("teamID", "name", stat)]
-    names(d)[3] <- "value"
+  d <- df[, c("teamID", "name", stat)]
+  names(d)[3] <- "value"
 
-    d <- d[is.finite(d$value), , drop = FALSE]
-    validate(need(nrow(d) > 1, "Not enough data to plot."))
+  d <- d[is.finite(d$value), , drop = FALSE]
+  validate(need(nrow(d) > 1, "Not enough data to plot."))
 
-    d <- d[order(d$value, decreasing = TRUE), , drop = FALSE]
-    d$rank <- seq_len(nrow(d))
+  d <- d[order(d$value, decreasing = TRUE), , drop = FALSE]
+  d$rank <- seq_len(nrow(d))
 
-    pretty_label <- pretty_stat(stat)
+  pretty_label <- pretty_stat(stat)
 
-    plot(
-      x = d$value, y = d$rank,
-      xlab = pretty_label,
-      ylab = "League Rank (1 = most)",
-      main = paste0(year, " — ", pretty_label),
-      yaxt = "n"
-    )
-    
-    axis(2, at = pretty(d$rank))
-    abline(h = pretty(d$rank), lty = 3)
-
-    idx <- which(d$teamID == selected_team)
-    if (length(idx) == 1) {
-      points(d$value[idx], d$rank[idx], pch = 19, cex = 1.4)
-      text(d$value[idx], d$rank[idx], labels = d$teamID[idx], pos = 4)
-    } else {
-      mtext("Selected team not found this year", side = 3, line = 0.2, cex = 0.85)
-    }
-  }
+  ggplot(d, aes(x = value, y = rank)) +
+    geom_point(color = "white", size = 2, alpha = 0.8) +
+    geom_point(
+      data = subset(d, teamID == selected_team),
+      color = "#f39c12",
+      size = 4
+    ) +
+    geom_text(
+      data = subset(d, teamID == selected_team),
+      aes(label = teamID),
+      color = "#f39c12",
+      nudge_x = 0.08 * diff(range(d$value, na.rm = TRUE)),,
+      size = 4,
+      fontface = "bold"
+    ) +
+    geom_segment(
+      data = subset(d, teamID == selected_team),
+      aes(x = min(d$value), xend = value, y = rank, yend = rank),
+      color = "#f39c12",
+      linewidth = 0.6,
+      alpha = 0.5
+    ) + 
+    scale_y_reverse() +
+    labs(
+      title = paste0(year, " — ", pretty_label),
+      x = pretty_label,
+      y = "League Rank (1 = most)"
+    ) +
+    superhero_plot_theme()
+}
 
   # ---------- sidebar inputs ----------
   observeEvent(year_int(), {
