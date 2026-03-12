@@ -9,6 +9,17 @@ library(bslib)
 library(Lahman) # specific data set for the app (baseball data)
 
 data("LahmanData", package = "Lahman")
+
+# for later use
+stat_category_labels <- c(
+  W = "Wins (W)",
+  L = "Losses (L)",
+  R = "Runs Scored (R)",
+  RA = "Runs Allowed (RA)",
+  HR = "Home Runs (HR)",
+  SB = "Stolen Bases (SB)",
+  ERA = "Earned Run Average (ERA)"
+)
 ```
 
 ### ui
@@ -24,8 +35,6 @@ ui <- page_sidebar(
     style = "font-weight:700; font-size:1.6rem;",
     "Baseball Data and Analytics — Courtesy of the Lahman Package"),
   
-  tags$h5(style = "font-weight:650; font-size:1rem;"),
-  
   # sidebar
   sidebar = sidebar(
     position = "left",
@@ -33,7 +42,7 @@ ui <- page_sidebar(
     # year selection first  
     selectInput(
       "year_choice",
-      tags$h5("Select a Year to View:"),
+      tags$h5(style = "font-weight:700;", "Select a Year to View:"),
       choices = sort(unique(Lahman::Teams$yearID), decreasing = TRUE)
     ),
 
@@ -81,6 +90,10 @@ ui <- page_sidebar(
 server <- function(input, output, session) {
 
   # ---------- helpers ----------
+  pretty_stat <- function(stat) {
+    ifelse(stat %in% names(stat_category_labels), stat_category_labels[stat], stat)
+  }
+  
   year_int <- reactive({
     req(input$year_choice)
     yr <- suppressWarnings(as.integer(input$year_choice))
@@ -115,12 +128,16 @@ server <- function(input, output, session) {
     d <- d[order(d$value, decreasing = TRUE), , drop = FALSE]
     d$rank <- seq_len(nrow(d))
 
+    pretty_label <- pretty_stat(stat)
+
     plot(
       x = d$value, y = d$rank,
-      xlab = stat, ylab = "League Rank (1 = most)",
-      main = paste0(year, " — ", stat),
+      xlab = pretty_label,
+      ylab = "League Rank (1 = most)",
+      main = paste0(year, " — ", pretty_label),
       yaxt = "n"
     )
+    
     axis(2, at = pretty(d$rank))
     abline(h = pretty(d$rank), lty = 3)
 
@@ -175,10 +192,13 @@ server <- function(input, output, session) {
 
     default_stat <- if ("W" %in% stats) "W" else stats[1]
 
+    pretty_stats <- stats
+    names(pretty_stats) <- pretty_stat(stats)
+
     updateSelectizeInput(
       session,
       "stat_choice",
-      choices = stats,
+      choices = pretty_stats,
       selected = default_stat,
       server = TRUE
     )
@@ -187,12 +207,16 @@ server <- function(input, output, session) {
   # ---------- card header ----------
   output$card_title <- renderUI({
     req(input$team_choice)
+
     stat_txt <- if (!is.null(input$stat_choice) && nzchar(input$stat_choice)) {
-      paste0(" | Stat: ", input$stat_choice)
+      paste0(" | Stat: ", pretty_stat(input$stat_choice))
     } else {
       ""
     }
-    paste0("Year: ", year_int(), " | Team: ", input$team_choice, stat_txt)
+
+    tags$strong(
+      paste0("Year: ", year_int(), " | Team: ", input$team_choice, stat_txt)
+    )
   })
 
   # ---------- core team stats ----------
@@ -204,7 +228,7 @@ server <- function(input, output, session) {
     req(length(cols) > 0)
 
     data.frame(
-      Stat  = cols,
+      Stat  = pretty_stat(cols),
       Value = vapply(cols, function(x) row[[x]][[1]], numeric(1)),
       row.names = NULL
     )
