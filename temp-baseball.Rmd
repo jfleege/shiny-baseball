@@ -310,6 +310,15 @@ server <- function(input, output, session) {
       style = "font-weight:700; margin-top:20px;"
     )
   })
+  
+  output$plot_distrib <- renderUI({
+    req(input$stat_choice)
+    
+    tags$h4(
+      paste("League Distribution Comparison for", pretty_stat(input$stat_choice)),
+      style = "font-weight:700; margin-top:20px;"
+    )
+  })
   # ---------- core team stats ----------
   output$team_stats_tbl <- renderTable({
     row <- team_row()
