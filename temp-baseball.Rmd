@@ -94,7 +94,12 @@ ui <- page_sidebar(
   card(
     card_header(uiOutput("card_title")),
     card_body(
+      uiOutput("plot_section_table_title"),
+      
       tableOutput("team_stats_tbl"),
+      
+      uiOutput("plot_section_title"),
+      
       fluidRow(
         column(6, plotOutput("stat_plot_year", height = "320px")),
         column(6, plotOutput("stat_plot_prev", height = "320px"))
@@ -123,7 +128,7 @@ server <- function(input, output, session) {
       plot.background = element_rect(fill = "#2b3e50", color = NA),
       panel.background = element_rect(fill = "#2b3e50", color = NA),
       panel.grid.major = element_line(color = "#4e5d6c", linewidth = 0.4),
-      panel.grid.minor = element_line(color = "#3e4c59", linewidth = 0.2),
+      panel.grid.minor = element_line(color = "#3e4c59", linewidth = 0.3),
       text = element_text(color = "white"),
       axis.text = element_text(color = "white"),
       axis.title = element_text(color = "white", face = "bold"),
@@ -261,6 +266,18 @@ server <- function(input, output, session) {
   })
 
   # ---------- card header ----------
+  output$plot_section_table_title <- renderUI({
+  req(input$team_choice)
+
+  row <- team_row()
+  team_name <- row$name
+
+  tags$h4(
+    paste0("Team Summary for ", team_name, " (", input$team_choice, ") — ", year_int()),
+    style = "font-weight:700; margin-top:10px;"
+  )
+})
+  
   output$card_title <- renderUI({
     req(input$team_choice)
 
@@ -275,6 +292,14 @@ server <- function(input, output, session) {
     )
   })
 
+  output$plot_section_title <- renderUI({
+    req(input$stat_choice)
+
+    tags$h4(
+      paste("League Comparison for", pretty_stat(input$stat_choice)),
+      style = "font-weight:700; margin-top:20px;"
+    )
+  })
   # ---------- core team stats ----------
   output$team_stats_tbl <- renderTable({
     row <- team_row()
@@ -284,8 +309,8 @@ server <- function(input, output, session) {
     req(length(cols) > 0)
 
     data.frame(
-      Stat  = pretty_stat(cols),
-      Value = vapply(cols, function(x) row[[x]][[1]], numeric(1)),
+      Statistics  = pretty_stat(cols),
+      Totals = vapply(cols, function(x) row[[x]][[1]], numeric(1)),
       row.names = NULL
     )
   }, striped = TRUE, bordered = TRUE, spacing = "s")
