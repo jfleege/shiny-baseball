@@ -37,23 +37,43 @@ ui <- page_sidebar(
   # main page / card code here
   card(
     card_header(uiOutput("card_title")),
-    card_body(
-      uiOutput("plot_section_table_title"),
-      
-      tableOutput("team_stats_tbl"),
-      
-      uiOutput("plot_section_title"),
-      
-      fluidRow(
-        column(6, plotlyOutput("stat_plot_year", height = "320px")),
-        column(6, plotlyOutput("stat_plot_prev", height = "320px"))
+    
+    navset_card_tab(
+      nav_panel(
+        "Dashboard",
+        card_body(
+          uiOutput("plot_section_table_title"),
+          
+          tableOutput("team_stats_tbl"),
+          
+          uiOutput("plot_section_title"),
+          
+          fluidRow(
+            column(6, plotlyOutput("stat_plot_year", height = "320px")),
+            column(6, plotlyOutput("stat_plot_prev", height = "320px"))
+          ),
+          
+          uiOutput("plot_distrib"),
+          
+          fluidRow(
+            column(6, plotOutput("stat_distrib_year", height = "320px")),
+            column(6, plotOutput("stat_distrib_prev", height = "320px"))
+          )
+        )
       ),
       
-      uiOutput("plot_distrib"),
+      nav_panel(
+        "Team vs Team",
+        card_body(
+          uiOutput("team_compare_section")
+        )
+      ),
       
-      fluidRow(
-        column(6, plotOutput("stat_distrib_year", height = "320px")),
-        column(6, plotOutput("stat_distrib_prev", height = "320px"))
+      nav_panel(
+        "Notes",
+        card_body(
+          uiOutput("notes_section")
+        )
       )
     )
   ),
