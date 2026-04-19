@@ -33,6 +33,6 @@ stat_category_labels <- c(
   BBA = "Walks Allowed (BBA)",
   SOA = "Strikeouts Allowed (SOA)",
   DP = "Double Plays (DP)",
-  FP = "Fielding Percentage (FP)",
+  FP = "Fielding Percentage (FPCT)",
   attendance = "Attendance"
 )
