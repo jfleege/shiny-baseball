@@ -355,4 +355,10 @@ server <- function(input, output, session) {
         superhero_plot_theme()
     })
   })
+  
+  # ---------- notes section ----------
+  
+  output$notes_section <- renderUI({
+    includeMarkdown("notes.md")
+  })
 }
