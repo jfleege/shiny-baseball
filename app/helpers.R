@@ -1,1 +1,38 @@
+data("LahmanData", package = "Lahman")
 
+# for side panel use
+stat_category_labels <- c(
+  W = "Wins (W)",
+  L = "Losses (L)",
+  R = "Runs Scored (R)",
+  RA = "Runs Allowed (RA)",
+  HR = "Home Runs (HR)",
+  SB = "Stolen Bases (SB)",
+  ERA = "Earned Run Average (ERA)",
+  Ghome = "Home Games (Ghome)",
+  G = "Games Played (G)",
+  AB = "At Bats (AB)",
+  H = "Hits (H)",
+  X2B = "Doubles (2B)",
+  X3B = "Triples (3B)",
+  BB = "Walks (BB)",
+  SO = "Strikeouts (SO)",
+  ER = "Earned Runs (ER)",
+  HBP = "Hit By Pitch (HBP)",
+  SF = "Sacrifice Flies (SF)",
+  SV = "Saves (SV)",
+  HA = "Hits Allowed (HA)",
+  HRA = "Home Runs Allowed (HRA)",
+  CG = "Complete Games (CG)",
+  E = "Errors (E)",
+  PPF = "Pitcher's Performance Factor (PPF)",
+  BPF = "Bat Performance Factor (BPF)",
+  CS = "Caught Stealing (CS)",
+  SHO = "Shutouts (SHO)",
+  IPouts = "Outs by Pitcher (IPouts)",
+  BBA = "Walks Allowed (BBA)",
+  SOA = "Strikeouts Allowed (SOA)",
+  DP = "Double Plays (DP)",
+  FP = "Fielding Percentage (FP)",
+  attendance = "Attendance"
+)
