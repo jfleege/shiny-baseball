@@ -100,6 +100,11 @@ server <- function(input, output, session) {
       superhero_plot_theme()
   }
   
+  get_available_stats <- function(row_df) {
+    num_cols <- names(row_df)[vapply(row_df, is.numeric, logical(1))]
+    intersect(useful_team_stats, num_cols)
+  }
+  
   # ---------- sidebar inputs ----------
   observeEvent(year_int(), {
     df <- teams_year()
@@ -132,8 +137,7 @@ server <- function(input, output, session) {
     req(input$team_choice)
     row <- team_row()
     
-    num_cols <- names(row)[vapply(row, is.numeric, logical(1))]
-    setdiff(num_cols, c("yearID"))
+    get_available_stats(row)
   })
   
   observeEvent(input$team_choice, {
@@ -360,5 +364,129 @@ server <- function(input, output, session) {
   
   output$notes_section <- renderUI({
     includeMarkdown("notes.md")
+  })
+  
+  # ---------- team vs team tab -------
+  
+  observeEvent(list(year_int(), input$team_choice), {
+    req(input$team_choice)
+    
+    df <- teams_year()
+    df <- df[!duplicated(df$teamID), , drop = FALSE]
+    
+    # exclude the currently selected team
+    df <- df[df$teamID != input$team_choice, , drop = FALSE]
+    
+    compare_labels <- paste0(df$name, " (", df$teamID, ")")
+    compare_values <- df$teamID
+    names(compare_values) <- compare_labels
+    
+    updateSelectizeInput(
+      session,
+      "team_compare_choice",
+      choices = compare_values,
+      selected = character(0),
+      server = TRUE
+    )
+  })
+  
+  output$team_compare_summary <- renderUI({
+    req(input$team_choice, input$team_compare_choice)
+    
+    df <- teams_year()
+    
+    row1 <- df[df$teamID == input$team_choice, , drop = FALSE][1, , drop = FALSE]
+    row2 <- df[df$teamID == input$team_compare_choice, , drop = FALSE][1, , drop = FALSE]
+    
+    team1_name <- row1$name
+    team2_name <- row2$name
+    
+    stat <- input$stat_choice
+    pretty_label <- pretty_stat(stat)
+    
+    val1 <- row1[[stat]][[1]]
+    val2 <- row2[[stat]][[1]]
+    diff_val <- round(val1 - val2, 2)
+    
+    comparison_text <- if (diff_val > 0) {
+      paste0(team1_name, " lead ", team2_name, " by ", diff_val, " in ", pretty_label, ".")
+    } else if (diff_val < 0) {
+      paste0(team2_name, " lead ", team1_name, " by ", abs(diff_val), " in ", pretty_label, ".")
+    } else {
+      paste0(team1_name, " and ", team2_name, " are tied in ", pretty_label, ".")
+    }
+    
+    tagList(
+      tags$h4(
+        paste0("Comparison: ", team1_name, " (", input$team_choice, ") vs ",
+               team2_name, " (", input$team_compare_choice, ")"),
+        style = "font-weight:700;"
+      ),
+      tags$p(comparison_text)
+    )
+  })
+  
+  output$team_compare_dumbbell <- renderPlot({
+    req(input$team_choice, input$team_compare_choice)
+    
+    df <- teams_year()
+    
+    core_stats <- c("W", "L", "R", "RA", "HR", "SB", "ERA")
+    core_stats <- core_stats[core_stats %in% names(df)]
+    
+    get_percentile <- function(vec, value) {
+      round(mean(vec <= value, na.rm = TRUE) * 100, 1)
+    }
+    
+    row1 <- df[df$teamID == input$team_choice, ][1, ]
+    row2 <- df[df$teamID == input$team_compare_choice, ][1, ]
+    
+    compare_df <- data.frame(
+      stat = core_stats,
+      team1 = sapply(core_stats, function(s) {
+        get_percentile(df[[s]], row1[[s]])
+      }),
+      team2 = sapply(core_stats, function(s) {
+        get_percentile(df[[s]], row2[[s]])
+      })
+    )
+    
+    compare_df$stat <- factor(
+      pretty_stat(compare_df$stat),
+      levels = rev(pretty_stat(core_stats))
+    )
+    
+    ggplot(compare_df, aes(y = stat)) +
+      
+      # connecting line
+      geom_segment(
+        aes(x = team1, xend = team2, yend = stat),
+        color = "gray70",
+        linewidth = 1
+      ) +
+      
+      # team 1
+      geom_point(
+        aes(x = team1),
+        color = "#f39c12",
+        size = 3
+      ) +
+      
+      # team 2
+      geom_point(
+        aes(x = team2),
+        color = "#00bc8c",
+        size = 3
+      ) +
+      
+      labs(
+        title = "Team Comparison (Percentiles)",
+        subtitle = "Higher = better relative to league",
+        x = "Percentile",
+        y = NULL
+      ) +
+      
+      xlim(0, 100) +
+      superhero_plot_theme()
   })
 }

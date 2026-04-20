@@ -36,3 +36,11 @@ stat_category_labels <- c(
   FP = "Fielding Percentage (FPCT)",
   attendance = "Attendance"
 )
+
+useful_team_stats <- c(
+  "W", "L", "R", "RA", "HR", "SB", "ERA",
+  "AB", "H", "X2B", "X3B", "BB", "SO",
+  "ER", "HBP", "SF", "SV", "HA", "HRA",
+  "CG", "E", "CS", "SHO", "IPouts", "BBA",
+  "SOA", "DP", "FP", "attendance"
+)
