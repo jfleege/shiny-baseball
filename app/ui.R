@@ -67,27 +67,61 @@ ui <- page_sidebar(
         nav_panel(
           "Dashboard",
           card_body(
-            uiOutput("plot_section_table_title"),
-            
-            tableOutput("team_stats_tbl"),
-            
-            uiOutput("top_players_section"),
-            
-            uiOutput("plot_section_title"),
-            
-            uiOutput("current_year_label"),
-            fluidRow(
-              column(6, plotlyOutput("stat_plot_year", height = "320px")),
-              column(6, plotOutput("stat_distrib_year", height = "320px"))
+            div(
+              style = "
+    background-color: #2b3e50;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+  ",
+              uiOutput("plot_section_table_title"),
+              div(
+                class = "team-card-table",
+                tableOutput("team_stats_tbl")
+              )
             ),
             
-            tags$br(),
+            div(
+              style = "
+    background-color: #2b3e50;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+  ",
+              uiOutput("top_players_title"),
+              div(
+                class = "team-card-table",
+                tableOutput("top_players_tbl")
+              )
+            ),
             
-            uiOutput("previous_year_label"),
-            fluidRow(
-              column(6, plotlyOutput("stat_plot_prev", height = "320px")),
-              column(6, plotOutput("stat_distrib_prev", height = "320px"))
-            )
+            div(
+              style = "
+    background-color: #2b3e50;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+  ",
+              uiOutput("current_year_label"),
+              fluidRow(
+                column(6, plotlyOutput("stat_plot_year", height = "320px")),
+                column(6, plotOutput("stat_distrib_year", height = "320px"))
+              )
+            ),
+            
+            div(
+              style = "
+    background-color: #2b3e50;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+  ",
+              uiOutput("previous_year_label"),
+              fluidRow(
+                column(6, plotlyOutput("stat_plot_prev", height = "320px")),
+                column(6, plotOutput("stat_distrib_prev", height = "320px"))
+              )
+            ),
           )
         ),
         
@@ -114,21 +148,17 @@ ui <- page_sidebar(
                 6,
                 div(
                   style = "
-    background-color: #2b3e50;
-    padding: 20px;
-    border-radius: 12px;
-    margin-right: 10px;
-  ",
-                  
+            background-color: #2b3e50;
+            padding: 20px;
+            border-radius: 12px;
+            margin-right: 10px;
+          ",
                   uiOutput("team1_summary_title"),
-                  
                   div(
                     class = "team-card-table",
                     tableOutput("team1_stats_tbl")
                   ),
-                  
                   tags$div(style = "margin-top:15px;"),
-                  
                   uiOutput("team1_top_players_section")
                 )
               ),
@@ -137,22 +167,64 @@ ui <- page_sidebar(
                 6,
                 div(
                   style = "
-    background-color: #2b3e50;
-    padding: 20px;
-    border-radius: 12px;
-    margin-left: 10px;
-  ",
-                  
+            background-color: #2b3e50;
+            padding: 20px;
+            border-radius: 12px;
+            margin-left: 10px;
+          ",
                   uiOutput("team2_summary_title"),
-                  
                   div(
                     class = "team-card-table",
                     tableOutput("team2_stats_tbl")
                   ),
+                  tags$div(style = "margin-top:15px;"),
+                  uiOutput("team2_top_players_section")
+                )
+              )
+            ),
+            
+            tags$br(),
+            
+            uiOutput("team_compare_plot_title"),
+            
+            fluidRow(
+              column(
+                6,
+                div(
+                  style = "
+        background-color: #2b3e50;
+        padding: 20px;
+        border-radius: 12px;
+        margin-right: 10px;
+      ",
+                  
+                  uiOutput("team1_plot_title"),
+                  
+                  plotlyOutput("team1_rank_plot", height = "300px"),
                   
                   tags$div(style = "margin-top:15px;"),
                   
-                  uiOutput("team2_top_players_section")
+                  plotOutput("team1_distrib_plot", height = "300px")
+                )
+              ),
+              
+              column(
+                6,
+                div(
+                  style = "
+        background-color: #2b3e50;
+        padding: 20px;
+        border-radius: 12px;
+        margin-left: 10px;
+      ",
+                  
+                  uiOutput("team2_plot_title"),
+                  
+                  plotlyOutput("team2_rank_plot", height = "300px"),
+                  
+                  tags$div(style = "margin-top:15px;"),
+                  
+                  plotOutput("team2_distrib_plot", height = "300px")
                 )
               )
             )

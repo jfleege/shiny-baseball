@@ -198,6 +198,30 @@ server <- function(input, output, session) {
     )
   })
   
+  output$team1_plot_title <- renderUI({
+    req(input$team_choice, input$stat_choice)
+    
+    row <- team_row()
+    team_name <- standardize_team_name(input$team_choice, row$name)
+    
+    tags$h5(
+      paste0(team_name, " — ", pretty_stat(input$stat_choice)),
+      style = "font-weight:700; margin-bottom:10px;"
+    )
+  })
+  
+  output$team2_plot_title <- renderUI({
+    req(input$team_compare_choice, input$stat_choice)
+    
+    row <- team_compare_row()
+    team_name <- standardize_team_name(input$team_compare_choice, row$name)
+    
+    tags$h5(
+      paste0(team_name, " — ", pretty_stat(input$stat_choice)),
+      style = "font-weight:700; margin-bottom:10px;"
+    )
+  })
+  
   # ---------- card header ----------
   output$plot_section_table_title <- renderUI({
     req(input$team_choice)
@@ -275,6 +299,30 @@ server <- function(input, output, session) {
     tags$h4(
       paste("League Distribution Comparison for", pretty_stat(input$stat_choice)),
       style = "font-weight:700; margin-top:20px;"
+    )
+  })
+  
+  output$top_players_title <- renderUI({
+    req(input$team_choice, input$stat_choice)
+    
+    top_players <- top_players_data()
+    if (is.null(top_players) || nrow(top_players) == 0) return(NULL)
+    
+    row <- team_row()
+    team_name <- standardize_team_name(input$team_choice, row$name)
+    
+    tags$h4(
+      paste0(
+        "Top 5 Players for ",
+        pretty_stat(input$stat_choice),
+        " — ",
+        team_name,
+        " (",
+        input$team_choice,
+        "), ",
+        year_int()
+      ),
+      style = "font-weight:700;"
     )
   })
   # ---------- core team stats ----------
