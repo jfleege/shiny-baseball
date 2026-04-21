@@ -6,6 +6,7 @@ library(tidyverse) # for different functions
 library(bslib) # UI stuff
 library(plotly) # interactive plots
 library(Lahman) # data set
+library(ggridges) # for team vs team comparison
 
 
 # call files

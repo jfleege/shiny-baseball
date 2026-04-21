@@ -12,6 +12,19 @@ ui <- page_sidebar(
     color: #f39c12;
     font-weight: 700;
   }
+  
+  .team-card-table {
+    width: 100%;
+  }
+  
+  .team-card-table table {
+    width: 100% !important;
+  }
+  
+  .team-card-table th,
+  .team-card-table td {
+    padding: 10px 14px;
+  }
 ")),
   
   # left sidebar
@@ -58,17 +71,21 @@ ui <- page_sidebar(
             
             tableOutput("team_stats_tbl"),
             
+            uiOutput("top_players_section"),
+            
             uiOutput("plot_section_title"),
             
+            uiOutput("current_year_label"),
             fluidRow(
               column(6, plotlyOutput("stat_plot_year", height = "320px")),
-              column(6, plotlyOutput("stat_plot_prev", height = "320px"))
+              column(6, plotOutput("stat_distrib_year", height = "320px"))
             ),
             
-            uiOutput("plot_distrib"),
+            tags$br(),
             
+            uiOutput("previous_year_label"),
             fluidRow(
-              column(6, plotOutput("stat_distrib_year", height = "320px")),
+              column(6, plotlyOutput("stat_plot_prev", height = "320px")),
               column(6, plotOutput("stat_distrib_prev", height = "320px"))
             )
           )
@@ -77,7 +94,68 @@ ui <- page_sidebar(
         nav_panel(
           "Team vs Team",
           card_body(
-            uiOutput("team_compare_section")
+            
+            # comparison selector
+            selectizeInput(
+              "team_compare_choice",
+              tags$h5(style = "font-weight:700;", "Select a Team to Compare With:"),
+              choices = NULL,
+              options = list(placeholder = "Select a Team to Compare With")
+            ),
+            
+            tags$br(),
+            
+            uiOutput("team_compare_summary"),
+            
+            tags$br(),
+            
+            fluidRow(
+              column(
+                6,
+                div(
+                  style = "
+    background-color: #2b3e50;
+    padding: 20px;
+    border-radius: 12px;
+    margin-right: 10px;
+  ",
+                  
+                  uiOutput("team1_summary_title"),
+                  
+                  div(
+                    class = "team-card-table",
+                    tableOutput("team1_stats_tbl")
+                  ),
+                  
+                  tags$div(style = "margin-top:15px;"),
+                  
+                  uiOutput("team1_top_players_section")
+                )
+              ),
+              
+              column(
+                6,
+                div(
+                  style = "
+    background-color: #2b3e50;
+    padding: 20px;
+    border-radius: 12px;
+    margin-left: 10px;
+  ",
+                  
+                  uiOutput("team2_summary_title"),
+                  
+                  div(
+                    class = "team-card-table",
+                    tableOutput("team2_stats_tbl")
+                  ),
+                  
+                  tags$div(style = "margin-top:15px;"),
+                  
+                  uiOutput("team2_top_players_section")
+                )
+              )
+            )
           )
         )
       )
